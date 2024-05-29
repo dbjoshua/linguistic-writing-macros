@@ -1,0 +1,94 @@
+Sub Ling_Tree_Make_Diag()
+'
+' Ling_Make_TreeDiag Macro
+'
+'
+    Dim tree_basic As Table
+    Dim i As Integer, j As Integer
+    Dim tree_basic_lleafCell As cell
+    
+'   Inserer un tableau de 3 lignes et 4 colonnes
+    Set tree_basic = ActiveDocument.Tables.Add(Range:=Selection.Range, NumRows:=3, NumColumns:=4)
+
+'   Definir la hauteur des lignes
+    For i = 1 To 3
+        tree_basic.Rows(i).Height = CentimetersToPoints(0.7) ' Convertir en points
+    Next i
+
+'   Definir la largeur des colonnes
+    For j = 1 To 4
+        tree_basic.Columns(j).Width = CentimetersToPoints(0.7) ' Convertir en points
+    Next j
+
+'   Formattage du tableau
+    With tree_basic
+         .Borders.Enable = False
+         .TopPadding = 0
+         .BottomPadding = 0
+    End With
+
+'   Selectionner la cellule de depart
+    tree_basic.cell(2, 2).Select
+    
+'   Dessiner les branches initiales
+    With Selection.Borders(wdBorderDiagonalUp)
+        .LineStyle = Options.DefaultBorderLineStyle
+        .LineWidth = Options.DefaultBorderLineWidth
+        .Color = Options.DefaultBorderColor
+    End With
+    Selection.MoveRight Unit:=wdCharacter, Count:=1
+    With Selection.Borders(wdBorderDiagonalDown)
+        .LineStyle = Options.DefaultBorderLineStyle
+        .LineWidth = Options.DefaultBorderLineWidth
+        .Color = Options.DefaultBorderColor
+    End With
+End Sub
+Sub Ling_Tree_Make_LabCell()
+'
+' Ling_Make_Tree_LabCell Macro
+'
+'
+    Selection.MoveRight Unit:=wdCharacter, Count:=2, Extend:=wdExtend
+    Selection.Cells.Merge
+    Selection.SelectCell
+    Selection.ParagraphFormat.Alignment = wdAlignParagraphCenter
+    Selection.Cells.VerticalAlignment = wdCellAlignVerticalBottom
+End Sub
+Sub Ling_Tree_Make_Leaves()
+'
+' Ling_Make_Tree_Leaves Macro
+'
+'
+    With Selection.Borders(wdBorderDiagonalUp)
+        .LineStyle = Options.DefaultBorderLineStyle
+        .LineWidth = Options.DefaultBorderLineWidth
+        .Color = Options.DefaultBorderColor
+    End With
+    Selection.MoveRight Unit:=wdCharacter, Count:=1
+    With Selection.Borders(wdBorderDiagonalDown)
+        .LineStyle = Options.DefaultBorderLineStyle
+        .LineWidth = Options.DefaultBorderLineWidth
+        .Color = Options.DefaultBorderColor
+    End With
+End Sub
+Sub Ling_Tree_Enlarge_DiagZone()
+'
+' Ling_Tree_Enlarge_DiagZone Macro
+'
+'
+    Dim tree_zone As Table
+    Dim tree_zone_newCol As Column
+    Dim tree_zone_newRow As Row
+    
+'   Vérifier si le curseur est dans un tableau
+    If Selection.Information(wdWithInTable) Then
+'   Sélectionner le tableau actuel
+       Set tree_zone = Selection.Tables(1)
+'   Insérer une nouvelle colonne à droite du tableau
+       Set tree_zone_newCol = tree_zone.Columns.Add
+'   Insérer une nouvelle ligne en dessous du tableau
+       Set tree_zone_newRow = tree_zone.Rows.Add
+     Else
+         MsgBox "Placez le curseur dans un tableau avant d'exécuter cette macro", vbExclamation
+    End If
+End Sub

@@ -1,0 +1,185 @@
+Sub Ling_Matrix_VMode_Make()
+'
+' Ling_Matrix_VMode_Make Macro
+'
+'
+
+' Declaring variables
+Dim mtxRng As Range
+Dim mtxLines As table
+Dim mtxLBr As Column
+Dim mtxRBr As Column
+
+Dim left_br As Column
+Dim right_br As Column
+Dim vcel As cell
+Dim lchar As String
+Dim rchar As String
+Dim tlchar As String
+Dim trchar As String
+Dim blchar As String
+Dim brchar As String
+Dim sonde As Range
+
+If Selection.Paragraphs.Count < 2 Then
+    Set mtxRng = Selection.Paragraphs(1).Range
+    Else: 'Otherwise, assume user has selected whole ex.
+         Set mtxRng = Selection.Range
+End If
+
+With mtxRng.Find
+     .ClearFormatting
+     .Text = ","
+     .Replacement.ClearFormatting
+     .Replacement.Text = ""
+     .Execute Replace:=wdReplaceAll, Forward:=True, _
+     Wrap:=wdFindStop
+End With
+
+With mtxRng.Find
+     .ClearFormatting
+     .Text = " "
+     .Replacement.ClearFormatting
+     .Replacement.Text = "^p"
+     .Execute Replace:=wdReplaceAll, Forward:=True, _
+     Wrap:=wdFindStop
+End With
+
+'Process matrix text
+mtxTx = mtxRng.Text
+mtxRng.Font.SmallCaps = wdToggle
+
+'
+' / Conversion de la selection en tableau (adapte de la macro de Susanna Cumming dans "LingWord.dot")
+'
+    Set mtxLines = mtxRng.ConvertToTable(Separator:=" ", AutoFit:=True, _
+    AutoFitBehavior:=wdAutoFitContent, DefaultTableBehavior:=wdWord9TableBehavior)
+'   Formattage du tableau
+    With mtxLines
+         .Borders.Enable = False
+         .TopPadding = 0
+         .BottomPadding = 0
+         .LeftPadding = 0
+         .RightPadding = 0
+         .Spacing = 0
+         .AllowPageBreaks = False
+         .AllowAutoFit = True
+    End With
+
+'
+' / Adding brackets columns
+'
+
+    Set mtxLBr = mtxLines.Columns.Add(BeforeColumn:=mtxLines.Columns(1))
+    mtxLines.Columns(mtxLines.Columns.Count).Select
+    Selection.InsertColumnsRight
+    Set mtxRBr = mtxLines.Columns(mtxLines.Columns.Count)
+
+'
+' / Setting brackets characters (Unicode)    
+'
+tlchar = ChrW(&H23A1)
+lchar = ChrW(&H23A2)
+blchar = ChrW(&H23A3)
+trchar = ChrW(&H23A4)
+rchar = ChrW(&H23A5)
+brchar = ChrW(&H23A6)
+
+'
+' / Making brackets
+'
+
+    If mtxLines.Rows.Count = 1 Then
+       With mtxLines
+            .cell(1, 1).Range.InsertAfter "["
+            .cell(1, mtxLines.Columns.Count).Range.InsertAfter "]"
+       End With   
+    End If
+
+    If mtxLines.Rows.Count = 2 Then
+       With mtxLines
+            .cell(1, 1).Range.InsertAfter tlchar
+            .cell(mtxLines.Rows.Count, 1).Range.InsertAfter blchar
+            .cell(1, mtxLines.Columns.Count).Range.InsertAfter trchar
+            .cell(mtxLines.Columns.Count, mtxLines.Columns.Count).Range.InsertAfter brchar 
+       End With   
+    End If
+
+    If mtxLines.Rows.Count >= 3 Then
+       If mtxLines.Columns.Count >= 3 Then
+          Set left_br = mtxLines.Columns(1)
+          Set right_br = mtxLines.Columns(mtxLines.Columns.Count)
+          For Each vcel In left_br.Cells
+              If vcel.RowIndex > 1 And vcel.RowIndex < mtxLines.Rows.Count Then
+                 vcel.Range.Text = lchar
+                ElseIf vcel.RowIndex = 1 Then
+                       vcel.Range.Text = tlchar
+                ElseIf vcel.RowIndex = mtxLines.Rows.Count Then
+                       vcel.Range.Text = blchar
+              End If
+          Next vcel
+          For Each vcel In right_br.Cells
+              If vcel.RowIndex > 1 And vcel.RowIndex < mtxLines.Rows.Count Then
+                 vcel.Range.Text = rchar
+                ElseIf vcel.RowIndex = 1 Then
+                       vcel.Range.Text = trchar
+                ElseIf vcel.RowIndex = mtxLines.Rows.Count Then
+                       vcel.Range.Text = brchar
+              End If
+          Next vcel
+       End If
+    End If
+
+'
+' / Formatting values
+'
+    Set sonde = mtxLines.Range
+    With sonde.Find
+         .Execute FindText:="-", ReplaceWith:=ChrW(&H2012), Replace:=wdReplaceAll, _ 
+          Forward:=True, Wrap:=wdFindStop
+         .Execute FindText:="@pm", ReplaceWith:=ChrW(&H00B1), Replace:=wdReplaceAll, _ 
+          Forward:=True, Wrap:=wdFindStop
+         .Execute FindText:="@@", ReplaceWith:=ChrW(&H03B1), Replace:=wdReplaceAll, _ 
+          Forward:=True, Wrap:=wdFindStop
+    End With      
+End Sub
+
+Sub Ling_Matrix_HMode_Make()
+'
+' Ling_Matrix_HMode_Make Macro
+'
+'
+' Declaring variables
+Dim mtxRng As Range
+Dim mtxLBr As String
+Dim mtxRBr As String
+Dim mtxHor As String
+
+Set mtxRng = Selection.Range
+
+With mtxRng.Find
+     .Execute FindText:="-", ReplaceWith:=ChrW(&H2012), Replace:=wdReplaceAll, _ 
+      Forward:=True, Wrap:=wdFindStop
+     .Execute FindText:="@pm", ReplaceWith:=ChrW(&H00B1), Replace:=wdReplaceAll, _ 
+      Forward:=True, Wrap:=wdFindStop
+     .Execute FindText:="@@", ReplaceWith:=ChrW(&H03B1), Replace:=wdReplaceAll, _ 
+      Forward:=True, Wrap:=wdFindStop
+End With
+
+'Process matrix text
+mtxTx = mtxRng.Text
+mtxRng.Font.SmallCaps = wdToggle
+
+'
+' / Adding brackets
+'
+mtxLBr = "["
+mtxRBr = "]"
+mtxHor = mtxLBr & mtxRng & mtxRBr
+
+'
+' / Insert hor. matrix
+'
+Selection.TypeText mtxHor
+
+End Sub

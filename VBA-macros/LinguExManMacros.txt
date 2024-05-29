@@ -1,0 +1,141 @@
+Sub Ling_Ex_Interlinear()
+'
+' Macro d'interlignage par Josue Dominique DeChrist
+'
+' Date : 04/10/2023 
+'
+' -----------------------------------------------------
+' Info :
+' Cette macro est une adaptation de la macro de Susanna
+' "TableExample" dans "LingWord.dot". Elle ne prend en 
+' compte qu'une seule ligne de glose.
+' ----------------------------------------------------
+
+
+'
+' / Declarations
+'
+    Dim gexLines As Table
+    Dim gexTx As String
+    Dim gexMb As Paragraph
+    Dim gexGl As Paragraph
+    Dim gexRng As Range
+    Dim indCol As Object
+    Dim indWidth As Integer
+'
+' / Selection du texte à interligner (adapte de la macro de Susanna)
+'   Aide : Placer le curseur sur la ligne de glose ou selectionner toutes les lignes à interlinger (enonce+gloses)  
+    If Selection.Paragraphs.Count < 2 Then
+       Set gexRng = Selection.Paragraphs(1).Range
+       gexRng.MoveStart wdParagraph, -1
+       Else: 'Sinon, supposer que l'utilisateur a selectionne tout le texte de à interligner
+            Set gexRng = Selection.Range
+    End If
+'
+' / Conversion de la selection en tableau (adapte de la macro de Susanna)
+'
+    Set gexLines = Selection.ConvertToTable(Separator:=" ", AutoFit:=True, _
+    AutoFitBehavior:=wdAutoFitContent, DefaultTableBehavior:=wdWord9TableBehavior)
+'   Formattage du tableau
+    With gexLines
+         .Borders.Enable = False
+         .TopPadding = 0
+         .BottomPadding = 0
+         .LeftPadding = 0
+         .RightPadding = 0
+         .Spacing = 3
+         .AllowPageBreaks = False
+         .AllowAutoFit = True
+    End With
+
+'
+' / Indentation des lignes
+'
+    indWidth = 39
+    Set indCol = Selection.Columns.Add(BeforeColumn:=Selection.Columns(1))
+        indCol.Width = indWidth
+
+'   Updating document fields
+    ActiveDocument.Fields.Update
+
+'
+' / TAF
+'
+' A. Ajouter un linebreak automatique
+   
+End Sub
+
+Sub Ling_Ex_Interlinear_Lines_ManualBreak()
+    Dim indexTableauCourant As Integer
+    Dim tabCour As Table
+    Dim lastColCurTab As Column
+    Dim span As Integer
+    Dim IndexColonne As Integer
+    Dim CelluleCourante As Cell
+    Dim identCol As Column
+    Dim gexCutLines As Table
+    Dim indentWidth As Integer
+ 
+    indexTableauCourant = ActiveDocument.Range(0, Selection.Tables(1).Range.End).Tables.Count
+    Set tabCour = ActiveDocument.Tables(indexTableauCourant)
+    
+    Set lastColCurTab = tabCour.Columns(tabCour.Columns.Count)
+    
+    ' Verifier si le curseur se trouve dans une table
+    If Selection.Information(wdWithInTable) = True Then
+       ' Obtenir la cellule actuelle
+       Set CelluleCourante = Selection.Cells(1)
+       '
+       IndexColonne = CelluleCourante.ColumnIndex
+       ' MsgBox "Le curseur se trouve dans la colonne " & IndexColonne
+       Else
+            ' MsgBox "Le curseur ne se trouve pas dans une table"
+    End If
+    
+    span = lastColCurTab.Index - IndexColonne
+    
+    Selection.MoveDown Unit:=wdLine, Count:=1, Extend:=wdExtend
+    Selection.MoveRight Unit:=wdCharacter, Count:=span, Extend:=wdExtend
+    Selection.Cut
+    Selection.MoveDown Unit:=wdLine, Count:=2
+    Selection.TypeParagraph
+    Selection.PasteAndFormat (wdFormatOriginalFormatting) 
+
+'   Adding indentation column
+    Set cutLines = Selection.Tables(1)
+    '   Formattage du tableau
+    With cutLines
+         .Borders.Enable = False
+         .TopPadding = 0
+         .BottomPadding = 0
+         .LeftPadding = 0
+         .RightPadding = 0
+         .Spacing = 3
+         .AllowPageBreaks = False
+         .AllowAutoFit = True
+         .AutoFitBehavior wdAutoFitContent
+    End With
+    indentWidth = 39
+    Set indentCol = gexCutLines.Columns.Add(BeforeColumn:=gexCutLines.Columns(1))
+    indentCol.Width = indentWidth
+
+'   Updating document fields
+    ActiveDocument.Fields.Update
+End Sub
+
+Sub Ling_Ex_Number()
+'   
+' ExampleNumber Macro
+' Macro by Susanna Cumming from "LingWord"
+' Modify if you want to change punctuation, remove tab etc.
+'   
+
+'   Adding left bracket mark
+    Selection.TypeText Text:="("
+'   Inserting number
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, Text:="SEQ genitem" ' identifier modified
+'   Adding right bracket mark
+    Selection.TypeText Text:=")" & vbTab
+'   Updating document fields
+    ActiveDocument.Fields.Update
+End Sub
