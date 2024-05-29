@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="Features_and_Matrices" script:language="StarBasic" script:moduleType="normal">REM  *****  BASIC  *****
+
+sub lwt_mtx_Make_feature_or_HMatrice
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_Make_feature_or_HMatrice)
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:SmallCaps&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:Cut&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:SmallCaps&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args3(0) as new com.sun.star.beans.PropertyValue
+args3(0).Name = &quot;Text&quot;
+args3(0).Value = &quot;[&quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertText&quot;, &quot;&quot;, 0, args3())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:Paste&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args5(0) as new com.sun.star.beans.PropertyValue
+args5(0).Name = &quot;Text&quot;
+args5(0).Value = &quot;]&quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertText&quot;, &quot;&quot;, 0, args5())
+
+rem ----------------------------------------------------------------------
+dim args1(21) as new com.sun.star.beans.PropertyValue
+args1(0).Name = &quot;SearchItem.StyleFamily&quot;
+args1(0).Value = 2
+args1(1).Name = &quot;SearchItem.CellType&quot;
+args1(1).Value = 0
+args1(2).Name = &quot;SearchItem.RowDirection&quot;
+args1(2).Value = true
+args1(3).Name = &quot;SearchItem.AllTables&quot;
+args1(3).Value = false
+args1(4).Name = &quot;SearchItem.SearchFiltered&quot;
+args1(4).Value = false
+args1(5).Name = &quot;SearchItem.Backward&quot;
+args1(5).Value = false
+args1(6).Name = &quot;SearchItem.Pattern&quot;
+args1(6).Value = false
+args1(7).Name = &quot;SearchItem.Content&quot;
+args1(7).Value = false
+args1(8).Name = &quot;SearchItem.AsianOptions&quot;
+args1(8).Value = false
+args1(9).Name = &quot;SearchItem.AlgorithmType&quot;
+args1(9).Value = 0
+args1(10).Name = &quot;SearchItem.SearchFlags&quot;
+args1(10).Value = 65536
+args1(11).Name = &quot;SearchItem.SearchString&quot;
+args1(11).Value = &quot;+-&quot;
+args1(12).Name = &quot;SearchItem.ReplaceString&quot;
+args1(12).Value = Chr(177)
+args1(13).Name = &quot;SearchItem.Locale&quot;
+args1(13).Value = 255
+args1(14).Name = &quot;SearchItem.ChangedChars&quot;
+args1(14).Value = 2
+args1(15).Name = &quot;SearchItem.DeletedChars&quot;
+args1(15).Value = 2
+args1(16).Name = &quot;SearchItem.InsertedChars&quot;
+args1(16).Value = 2
+args1(17).Name = &quot;SearchItem.TransliterateFlags&quot;
+args1(17).Value = 1280
+args1(18).Name = &quot;SearchItem.Command&quot;
+args1(18).Value = 3
+args1(19).Name = &quot;SearchItem.SearchFormatted&quot;
+args1(19).Value = false
+args1(20).Name = &quot;SearchItem.AlgorithmType2&quot;
+args1(20).Value = 1
+args1(21).Name = &quot;Quiet&quot;
+args1(21).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:ExecuteSearch&quot;, &quot;&quot;, 0, args1())
+
+rem ----------------------------------------------------------------------
+dim args2(21) as new com.sun.star.beans.PropertyValue
+args2(0).Name = &quot;SearchItem.StyleFamily&quot;
+args2(0).Value = 2
+args2(1).Name = &quot;SearchItem.CellType&quot;
+args2(1).Value = 0
+args2(2).Name = &quot;SearchItem.RowDirection&quot;
+args2(2).Value = true
+args2(3).Name = &quot;SearchItem.AllTables&quot;
+args2(3).Value = false
+args2(4).Name = &quot;SearchItem.SearchFiltered&quot;
+args2(4).Value = false
+args2(5).Name = &quot;SearchItem.Backward&quot;
+args2(5).Value = false
+args2(6).Name = &quot;SearchItem.Pattern&quot;
+args2(6).Value = false
+args2(7).Name = &quot;SearchItem.Content&quot;
+args2(7).Value = false
+args2(8).Name = &quot;SearchItem.AsianOptions&quot;
+args2(8).Value = false
+args2(9).Name = &quot;SearchItem.AlgorithmType&quot;
+args2(9).Value = 0
+args2(10).Name = &quot;SearchItem.SearchFlags&quot;
+args2(10).Value = 65536
+args2(11).Name = &quot;SearchItem.SearchString&quot;
+args2(11).Value = &quot;-&quot;
+args2(12).Name = &quot;SearchItem.ReplaceString&quot;
+args2(12).Value = Chr(8722)
+args2(13).Name = &quot;SearchItem.Locale&quot;
+args2(13).Value = 255
+args2(14).Name = &quot;SearchItem.ChangedChars&quot;
+args2(14).Value = 2
+args2(15).Name = &quot;SearchItem.DeletedChars&quot;
+args2(15).Value = 2
+args2(16).Name = &quot;SearchItem.InsertedChars&quot;
+args2(16).Value = 2
+args2(17).Name = &quot;SearchItem.TransliterateFlags&quot;
+args2(17).Value = 1280
+args2(18).Name = &quot;SearchItem.Command&quot;
+args2(18).Value = 3
+args2(19).Name = &quot;SearchItem.SearchFormatted&quot;
+args2(19).Value = false
+args2(20).Name = &quot;SearchItem.AlgorithmType2&quot;
+args2(20).Value = 1
+args2(21).Name = &quot;Quiet&quot;
+args2(21).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:ExecuteSearch&quot;, &quot;&quot;, 0, args2())
+
+rem ----------------------------------------------------------------------
+rem leaving the undo context
+    undo.leaveUndoContext()
+
+end sub
+
+sub lwt_mtx_Make_VMatrix()
+	MsgBox &quot;Still to be worked out. Use the formula tool instead&quot;
+end sub
+
+</script:module>

@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="Conversions" script:language="StarBasic" script:moduleType="normal">REM  *****  Module edited with BASIC  *****
+REM     *****  for LibreOffice  *****
+
+REM	 This module contains macros to be
+REM	 used to convert strings into 
+REM	 maths symbols or IPA transcriptions 
+
+REM	 Developed and maintained by:
+REM  Akpoué Kouamé Josué
+REM  Version: 1.0
+REM  Date: 01/13/2024 
+
+Sub lwt_cnv_Ling_XSAMPA_2_IPA()
+&apos;
+&apos; Macro de conversion de transcriptions XSAMPA en transcriptions par Josué Dominique DeChrist
+&apos;
+&apos; Version : 1.0
+&apos; Date : 16/01/2024
+&apos;
+REM  La macro scanne le texte sélectionné - qui est stocké dans la variable &quot;xsampa_str&quot;
+REM  Elle remplace toutes les occurrences de la première chaîne par le caractère unicode prévu
+REM  prévu et stocke le résultat dans la variable &quot;step_1&quot;
+REM  Elle remplace les occurrences d&apos;une expression à la fois et stocke le résultat
+REM  dans une variable nommée &quot;step_#+1&quot; (cad step_2, step_3, etc.)
+REM  Quand la dernière expression a été remplacée, la macro stocke le résultat dans
+REM  la variable &quot;ipa_str&quot;
+REM  Elle insère le contenu de &quot;ipa_str&quot; à l&apos;emplacement du curseur et supprime
+REM  le texte (initialement) sélectionné (cad le contenu de &quot;xsampa_str&quot;)
+
+REM  La macro utilise les codes décimaux des caractères unicode.
+REM  S&apos;il vous plaît, veuillez rapporter tout bug ou erreur à l&apos;adresse :
+REM  josueakpoue@gmail.com
+
+REM _H_T, _B_L, _R_F n&apos;ont pas d&apos;équivalent unicode
+&apos;
+&apos;	Déclaration des variables
+&apos;
+	dim document 	as object
+	dim dispatcher	as object
+	dim sel_obj		as object
+	dim sel_txt		as object
+	dim xsampa_str 	as String
+	dim ipa_str		as string
+
+&apos;	
+&apos;	Initialisation des premières variables
+&apos;
+	document = ThisComponent.CurrentController.Frame
+	dispatcher = CreateUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+	sel_obj = thisComponent.getCurrentController.getViewCursor
+	sel_txt = sel_obj.text
+	xsampa_str = thisComponent.CurrentSelection.getByIndex(0).getString()
+
+&apos;
+&apos;	Creation d&apos;un contexte d&apos;annulation
+&apos;	
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(i_ConvertSampa2Ipa)
+
+&apos;
+&apos;	Tests sur la sélection
+&apos;
+	if Len(xsampa_str) = 0 then
+	   Print &quot;Aucun texte sélectionné ! Vous devez d&apos;abord sélectionner du texte.&quot;
+	   Exit Sub
+	end if
+	
+	if Len(xsampa_str) &gt; 65535 then
+	   Print &quot;Le texte sélectionné est trop long. Essayez de nouveau en sélectionnant moins de 700 lignes.&quot;
+	   Exit sub
+	else
+	   	step_1 = Replace (xsampa_str, &quot;_&quot; &amp; Chr(34), Chr(776), 1, -1, False)
+		step_2 = Replace (step_1, &quot;d`&quot;, Chr(599), 1, -1, False)
+		step_3 = Replace (step_2, &quot;J\&quot;, Chr(607), 1, -1, False)
+		step_4 = Replace (step_3, &quot;X\&quot;, Chr(615), 1, -1, False)
+		step_5 = Replace (step_4, &quot;G\&quot;, Chr(610), 1, -1, False)
+		step_6 = Replace (step_5, &quot;l\&quot;, Chr(634), 1, -1, False)
+		step_7 = Replace (step_6, &quot;z\&quot;, Chr(657), 1, -1, False)
+		step_8 = Replace (step_7, &quot;n`&quot;, Chr(627), 1, -1, False)
+		step_9 = Replace (step_8, &quot;s\&quot;, Chr(597), 1, -1, False)
+		step_10 = Replace (step_9, &quot;&gt;\&quot;, Chr(674), 1, -1, False)
+		step_11 = Replace (step_10, &quot;N\&quot;, Chr(628), 1, -1, False)
+		step_12 = Replace (step_11, &quot;B\&quot;, Chr(665), 1, -1, False)
+		step_13 = Replace (step_12, &quot;R\&quot;, Chr(640), 1, -1, False)
+		step_14 = Replace (step_13, &quot;&lt;\&quot;, Chr(673), 1, -1, False)
+		step_15 = Replace (step_14, &quot;r`&quot;, Chr(638), 1, -1, False)
+		step_16 = Replace (step_15, &quot;p\&quot;, Chr(632), 1, -1, False)
+		step_17 = Replace (step_16, &quot;H\&quot;, Chr(668), 1, -1, False)
+		step_18 = Replace (step_17, &quot;_q&quot;, Chr(793), 1, -1, False)
+		step_19 = Replace (step_18, &quot;@`&quot;, Chr(602), 1, -1, False)
+		step_20 = Replace (step_19, &quot;_A&quot;, Chr(792), 1, -1, False)
+		step_21 = Replace (step_20, &quot;_^&quot;, Chr(815), 1, -1, False)
+		step_22 = Replace (step_21, &quot;s`&quot;, Chr(242), 1, -1, False)
+		step_23 = Replace (step_22, &quot;z`&quot;, Chr(256), 1, -1, False)
+		step_24 = Replace (step_23, &quot;_o&quot;, Chr(798), 1, -1, False)
+		step_25 = Replace (step_24, &quot;j\&quot;, Chr(269), 1, -1, False)
+		step_26 = Replace (step_25, &quot;_r&quot;, Chr(797), 1, -1, False)
+		step_27 = Replace (step_26, &quot;_x&quot;, Chr(829), 1, -1, False)
+		step_28 = Replace (step_27, &quot;_e&quot;, Chr(820), 1, -1, False)
+		step_29 = Replace (step_28, &quot;X\&quot;, Chr(295), 1, -1, False)
+		step_30 = Replace (step_29, &quot;?\&quot;, Chr(661), 1, -1, False)
+		step_31 = Replace (step_30, &quot;h\&quot;, Chr(641), 1, -1, False)
+		step_32 = Replace (step_31, &quot;_}&quot;, Chr(794), 1, -1, False)
+		step_33 = Replace (step_32, &quot;K\&quot;, Chr(622), 1, -1, False)
+		step_34 = Replace (step_33, &quot;_?\&quot;, Chr(740), 1, -1, False)
+		step_35 = Replace (step_34, &quot;v\&quot;, Chr(651), 1, -1, False)
+		step_36 = Replace (step_35, &quot;r\`&quot;, Chr(635), 1, -1, False)
+		step_37 = Replace (step_36, &quot;r\&quot;, Chr(633), 1, -1, False)
+		step_38 = Replace (step_37, &quot;M\&quot;, Chr(624), 1, -1, False)
+		step_39 = Replace (step_38, &quot;l`&quot;, Chr(621), 1, -1, False)
+		step_40 = Replace (step_39, &quot;_-&quot;, Chr(800), 1, -1, False)
+		step_41 = Replace (step_40, &quot;L\&quot;, Chr(671), 1, -1, False)
+		step_42 = Replace (step_41, &quot;O\&quot;, Chr(664), 1, -1, False)
+		step_43 = Replace (step_42, &quot;|\|\&quot;, Chr(449), 1, -1, False)
+		step_44 = Replace (step_43, &quot;!\&quot;, Chr(451), 1, -1, False)
+		step_45 = Replace (step_44, &quot;=\&quot;, Chr(450), 1, -1, False)
+		step_46 = Replace (step_45, &quot;|\&quot;, Chr(448), 1, -1, False)
+		step_47 = Replace (step_46, &quot;b_&lt;&quot;, Chr(595), 1, -1, False)
+		step_48 = Replace (step_47, &quot;d_&lt;&quot;, Chr(599), 1, -1, False)
+		step_49 = Replace (step_48, &quot;J\_&lt;&quot;, Chr(644), 1, -1, False)
+		step_50 = Replace (step_49, &quot;g_&lt;&quot;, Chr(608), 1, -1, False)
+		step_51 = Replace (step_50, &quot;G\_&lt;&quot;, Chr(667), 1, -1, False)
+		step_52 = Replace (step_51, &quot;p_&gt;&quot;, &quot;p&quot; &amp; Chr(700), 1, -1, False)
+		step_53 = Replace (step_52, &quot;t_&gt;&quot;, &quot;t&quot; &amp; Chr(700), 1, -1, False)
+		step_54 = Replace (step_53, &quot;k_&gt;&quot;, &quot;k&quot; &amp; Chr(700), 1, -1, False)
+		step_55 = Replace (step_54, &quot;s_&gt;&quot;, &quot;s&quot; &amp; Chr(700), 1, -1, False)
+		step_56 = Replace (step_55, &quot;_=&quot;, Chr(809), 1, -1, False)
+		step_57 = Replace (step_56, &quot;_l&quot;, Chr(737), 1, -1, False)
+		step_58 = Replace (step_57, &quot;_G&quot;, Chr(736), 1, -1, False)
+		step_59 = Replace (step_58, &quot;_+&quot;, Chr(799), 1, -1, False)
+		step_60 = Replace (step_59, &quot;_n&quot;, Chr(8319), 1, -1, False)
+		step_61 = Replace (step_60, &quot;_j&quot;, Chr(690), 1, -1, False)
+		step_62 = Replace (step_61, &quot;_c&quot;, Chr(796), 1, -1, False)
+		step_63 = Replace (step_62, &quot;~&quot;, Chr(771), 1, -1, False)
+		step_64 = Replace (step_63, &quot;_~&quot;, Chr(771), 1, -1, False)
+		step_65 = Replace (step_64, &quot;@\&quot;, Chr(600), 1, -1, False)
+		step_66 = Replace (step_65, &quot;_w&quot;, Chr(695), 1, -1, False)
+		step_67 = Replace (step_66, &quot;_O&quot;, Chr(825), 1, -1, False)
+		step_68 = Replace (step_67, &quot;_m&quot;, Chr(827), 1, -1, False)
+		step_69 = Replace (step_68, &quot;3\&quot;, Chr(606), 1, -1, False)
+		step_70 = Replace (step_69, &quot;_N&quot;, Chr(828), 1, -1, False)
+		step_71 = Replace (step_70, &quot;_h&quot;, Chr(688), 1, -1, False)
+		step_72 = Replace (step_71, &quot;_a&quot;, Chr(826), 1, -1, False)
+		step_73 = Replace (step_72, &quot;_k&quot;, Chr(816), 1, -1, False)
+		step_74 = Replace (step_73, &quot;_v&quot;, Chr(812), 1, -1, False)
+		step_75 = Replace (step_74, &quot;_d&quot;, Chr(810), 1, -1, False)
+		step_76 = Replace (step_75, &quot;_t&quot;, Chr(804), 1, -1, False)
+		step_77 = Replace (step_76, &quot;_0&quot;, Chr(805), 1, -1, False)
+		step_78 = Replace (step_77, &quot;&lt;F&gt;&quot;, Chr(8600), 1, -1, False)
+		step_79 = Replace (step_78, &quot;&lt;R&gt;&quot;, Chr(8599), 1, -1, False)
+		step_80 = Replace (step_79, &quot;_F&quot;, Chr(770), 1, -1, False)
+		step_81 = Replace (step_80, &quot;:\&quot;, Chr(721), 1, -1, False)
+		step_82 = Replace (step_81, &quot;_X&quot;, Chr(724), 1, -1, False)
+		step_83 = Replace (step_82, &quot;_R&quot;, Chr(780), 1, -1, False)
+		step_84 = Replace (step_83, &quot;||&quot;, Chr(449), 1, -1, False)
+		step_85 = Replace (step_84, &quot;-\&quot;, Chr(860), 1, -1, False)
+		step_86 = Replace (step_85, &quot;_T&quot;, Chr(779), 1, -1, False)
+		step_87 = Replace (step_86, &quot;_T&quot;, Chr(741), 1, -1, False)
+		step_88 = Replace (step_87, &quot;_H&quot;, Chr(769), 1, -1, False)
+		step_89 = Replace (step_88, &quot;_H&quot;, Chr(742), 1, -1, False)
+		step_90 = Replace (step_89, &quot;_M&quot;, Chr(772), 1, -1, False)
+		step_91 = Replace (step_90, &quot;_M&quot;, Chr(743), 1, -1, False)
+		step_92 = Replace (step_91, &quot;_L&quot;, Chr(768), 1, -1, False)
+		step_93 = Replace (step_92, &quot;_L&quot;, Chr(744), 1, -1, False)
+		step_94 = Replace (step_93, &quot;_B&quot;, Chr(783), 1, -1, False)
+		step_95 = Replace (step_94, &quot;_B&quot;, Chr(745), 1, -1, False)
+		step_96 = Replace (step_95, &quot;}&quot;, Chr(649), 1, -1, False)
+		step_97 = Replace (step_96, &quot;H&quot;, Chr(613), 1, -1, False)
+		step_98 = Replace (step_97, &quot;W&quot;, Chr(653), 1, -1, False)
+		step_99 = Replace (step_98, &quot;`&quot;, Chr(734), 1, -1, False)
+		step_100 = Replace (step_99, &quot;=&quot;, Chr(809), 1, -1, False)
+		step_101 = Replace (step_100, &quot;5&quot;, Chr(619), 1, -1, False)
+		step_102 = Replace (step_101, Chr(39), Chr(690), 1, -1, False)
+		step_103 = Replace (step_102, &quot;^&quot;, Chr(8593), 1, -1, False)
+		step_104 = Replace (step_103, &quot;!&quot;, Chr(8595), 1, -1, False)
+		step_105 = Replace (step_104, &quot;|&quot;, Chr(448), 1, -1, False)
+		step_106 = Replace (step_105, &quot;:&quot;, Chr(720), 1, -1, False)
+		step_107 = Replace (step_106, &quot;%&quot;, Chr(716), 1, -1, False)
+		step_108 = Replace (step_107, Chr(34), Chr(712), 1, -1, False)
+		step_109 = Replace (step_108, &quot;Q&quot;, Chr(594), 1, -1, False)
+		step_110 = Replace (step_109, &quot;A&quot;, Chr(593), 1, -1, False)
+		step_111 = Replace (step_110, &quot;O&quot;, Chr(596), 1, -1, False)
+		step_112 = Replace (step_111, &quot;V&quot;, Chr(652), 1, -1, False)
+		step_113 = Replace (step_112, &quot;7&quot;, Chr(612), 1, -1, False)
+		step_114 = Replace (step_113, &quot;U&quot;, Chr(650), 1, -1, False)
+		step_115 = Replace (step_114, &quot;M&quot;, Chr(623), 1, -1, False)
+		step_116 = Replace (step_115, &quot;6&quot;, Chr(592), 1, -1, False)
+		step_117 = Replace (step_116, &quot;3&quot;, Chr(604), 1, -1, False)
+		step_118 = Replace (step_117, &quot;@&quot;, Chr(601), 1, -1, False)
+		step_119 = Replace (step_118, &quot;8&quot;, Chr(629), 1, -1, False)
+		step_120 = Replace (step_119, &quot;1&quot;, Chr(616), 1, -1, False)
+		step_121 = Replace (step_120, &quot;&amp;&quot;, Chr(630), 1, -1, False)
+		step_122 = Replace (step_121, &quot;{&quot;, Chr(230), 1, -1, False)
+		step_123 = Replace (step_122, &quot;9&quot;, Chr(339), 1, -1, False)
+		step_124 = Replace (step_123, &quot;E&quot;, Chr(603), 1, -1, False)
+		step_125 = Replace (step_124, &quot;2&quot;, Chr(248), 1, -1, False)
+		step_126 = Replace (step_125, &quot;Y&quot;, Chr(655), 1, -1, False)
+		step_127 = Replace (step_126, &quot;I&quot;, Chr(618), 1, -1, False)
+		step_128 = Replace (step_127, &quot;L&quot;, Chr(654), 1, -1, False)
+		step_129 = Replace (step_128, &quot;P&quot;, Chr(651), 1, -1, False)
+		step_130 = Replace (step_129, &quot;K&quot;, Chr(620), 1, -1, False)
+		step_131 = Replace (step_130, &quot;R&quot;, Chr(641), 1, -1, False)
+		step_132 = Replace (step_131, &quot;X&quot;, Chr(967), 1, -1, False)
+		step_133 = Replace (step_132, &quot;G&quot;, Chr(611), 1, -1, False)
+		step_134 = Replace (step_133, &quot;C&quot;, Chr(231), 1, -1, False)
+		step_135 = Replace (step_134, &quot;Z&quot;, Chr(658), 1, -1, False)
+		step_136 = Replace (step_135, &quot;S&quot;, Chr(643), 1, -1, False)
+		step_137 = Replace (step_136, &quot;D&quot;, Chr(240), 1, -1, False)
+		step_138 = Replace (step_137, &quot;T&quot;, Chr(952), 1, -1, False)
+		step_139 = Replace (step_138, &quot;B&quot;, Chr(946), 1, -1, False)
+		step_140 = Replace (step_139, &quot;4&quot;, Chr(639), 1, -1, False)
+		step_141 = Replace (step_140, &quot;N&quot;, Chr(331), 1, -1, False)
+		step_142 = Replace (step_141, &quot;J&quot;, Chr(626), 1, -1, False)
+		step_143 = Replace (step_142, &quot;F&quot;, Chr(625), 1, -1, False)
+		step_144 = Replace (step_143, &quot;?&quot;, Chr(660), 1, -1, False)
+		step_145 = Replace (step_144, &quot;g&quot;, Chr(609), 1, -1, False)
+	   
+	   	ipa_str = step_145 
+	   
+	   &apos;MsgBox out_fin
+	   dim args1(1) as new com.sun.star.beans.PropertyValue
+	     args1(0).Name = &quot;Text&quot;
+	     args1(0).Value = sel_txt
+	     args1(1).Name = &quot;Select&quot;
+	     args1(1).Value = true
+
+	   sel_txt.insertString(sel_obj, ipa_str, false)
+	   dispatcher.executeDispatch(document, &quot;.uno:SwBackspace&quot;, &quot;&quot;, 0, args1())
+	end if
+	
+&apos;
+&apos;	Fermeture du contexte d&apos;annulation
+&apos;
+	undo.leaveUndoContext()	
+End Sub
+</script:module>

@@ -1,0 +1,549 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="Tree_Diagrams" script:language="StarBasic" script:moduleType="normal">REM  *****  BASIC  *****
+
+Function getTextTableFromSelection(pDoc As Object, Optional pSel As Object)
+Dim tT As Object
+getTextTableFromSelection = tT
+On Local Error Goto fail
+cCtrl = pDoc.CurrentController
+oldSel = pDoc.CurrentSelection
+If IsMissing(pSel) Then pSel = oldSel
+If pSel.supportsService(&quot;com.sun.star.text.TextTableCursor&quot;) Then
+  wasCur = True
+  splRgN = Split(pSel.RangeName, &quot;:&quot;)
+  wasSingle = (Ubound(splRgN)=0)
+  tlCellN = splRgN(0)
+  pSel.gotoCellByName(tlcellN, False)
+  cCtrl.select(pSel)
+  tRg = pDoc.CurrentSelection(0)
+Else
+  tRg = pSel(0)
+End If
+textTable = tRg.TextTable
+If NOT IsObject(textTable) Then textTable = tT
+getTextTableFromSelection = textTable
+fail:
+cCtrl.select(oldSel)
+If wasCur AND wasSingle Then
+  fr = cCtrl.Frame
+  dh = CreateUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+  dh.executeDispatch(fr, &quot;.uno:EntireCell&quot;, &quot;&quot;, 0, Array())
+End If
+End Function
+
+
+sub lwt_td_Start_new_tree
+
+Dim Doc As Object
+Dim Table As Object
+Dim Cursor As Object
+
+Doc = ThisComponent
+Cursor = Doc.Text.createTextCursor()
+vc = Doc.CurrentController.getViewCursor()
+
+Table = Doc.createInstance(&quot;com.sun.star.text.TextTable&quot;)
+Table.initialize(3, 4)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_lwt_td_Start_new_tree)
+
+rem ----------------------------------------------------------------------
+rem inserting a table with 3 rows and 4 columns
+Doc.Text.insertTextContent(vc, Table, False)
+
+&apos; ============= Placing the cursor within the table ==========================
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+rem ----------------------------------------------------------------------
+dim args1(1) as new com.sun.star.beans.PropertyValue
+args1(0).Name = &quot;Count&quot;
+args1(0).Value = 1
+args1(1).Name = &quot;Select&quot;
+args1(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoUp&quot;, &quot;&quot;, 0, args1())
+
+&apos; ==================== Selecting the current table ======================
+
+sel = Doc.CurrentSelection
+h = getTextTableFromSelection(Doc, sel)
+
+totalCol = h.getColumns.getCount
+h.HoriOrient = 3
+h.Width = 720 * totalCol
+&apos;MsgBox totalCol
+
+
+&apos; ================================== remove borders ==========================
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:SelectTable&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args2(7) as new com.sun.star.beans.PropertyValue
+args2(0).Name = &quot;BorderOuter.LeftBorder&quot;
+args2(0).Value = Array(0,0,0,0,32767,0)
+args2(1).Name = &quot;BorderOuter.LeftDistance&quot;
+args2(1).Value = 0
+args2(2).Name = &quot;BorderOuter.RightBorder&quot;
+args2(2).Value = Array(0,0,0,0,32767,0)
+args2(3).Name = &quot;BorderOuter.RightDistance&quot;
+args2(3).Value = 0
+args2(4).Name = &quot;BorderOuter.TopBorder&quot;
+args2(4).Value = Array(0,0,0,0,32767,0)
+args2(5).Name = &quot;BorderOuter.TopDistance&quot;
+args2(5).Value = 0
+args2(6).Name = &quot;BorderOuter.BottomBorder&quot;
+args2(6).Value = Array(0,0,0,0,32767,0)
+args2(7).Name = &quot;BorderOuter.BottomDistance&quot;
+args2(7).Value = 0
+
+dispatcher.executeDispatch(document, &quot;.uno:BorderOuter&quot;, &quot;&quot;, 0, args2())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:BorderInner&quot;, &quot;&quot;, 0, Array())
+
+
+&apos; ============================ inserting leaf connectors ==================
+rem ----------------------------------------------------------------------
+dim args3(1) as new com.sun.star.beans.PropertyValue
+args3(0).Name = &quot;Count&quot;
+args3(0).Value = 1
+args3(1).Name = &quot;Select&quot;
+args3(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoUp&quot;, &quot;&quot;, 0, args3())
+
+rem ----------------------------------------------------------------------
+dim args4(1) as new com.sun.star.beans.PropertyValue
+args4(0).Name = &quot;Count&quot;
+args4(0).Value = 2
+args4(1).Name = &quot;Select&quot;
+args4(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoLeft&quot;, &quot;&quot;, 0, args4())
+
+rem ----------------------------------------------------------------------
+dim args5(1) as new com.sun.star.beans.PropertyValue
+args5(0).Name = &quot;Symbols&quot;
+args5(0).Value = &quot;&quot;
+args5(1).Name = &quot;FontName&quot;
+args5(1).Value = &quot;STIX Two Math&quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertSymbol&quot;, &quot;&quot;, 0, args5())
+
+rem ----------------------------------------------------------------------
+dim args6(1) as new com.sun.star.beans.PropertyValue
+args6(0).Name = &quot;Count&quot;
+args6(0).Value = 1
+args6(1).Name = &quot;Select&quot;
+args6(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoRight&quot;, &quot;&quot;, 0, args6())
+
+rem ----------------------------------------------------------------------
+dim args7(1) as new com.sun.star.beans.PropertyValue
+args7(0).Name = &quot;Symbols&quot;
+args7(0).Value = &quot;&quot;
+args7(1).Name = &quot;FontName&quot;
+args7(1).Value = &quot;STIX Two Math&quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertSymbol&quot;, &quot;&quot;, 0, args7())
+
+rem ----------------------------------------------------------------------
+dim args8(1) as new com.sun.star.beans.PropertyValue
+args8(0).Name = &quot;Count&quot;
+args8(0).Value = 1
+args8(1).Name = &quot;Select&quot;
+args8(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoLeft&quot;, &quot;&quot;, 0, args8())
+
+rem ----------------------------------------------------------------------
+dim args9(1) as new com.sun.star.beans.PropertyValue
+args9(0).Name = &quot;Count&quot;
+args9(0).Value = 1
+args9(1).Name = &quot;Select&quot;
+args9(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoLeft&quot;, &quot;&quot;, 0, args9())
+
+rem ----------------------------------------------------------------------
+dim args10(2) as new com.sun.star.beans.PropertyValue
+args10(0).Name = &quot;FontHeight.Height&quot;
+args10(0).Value = 21
+args10(1).Name = &quot;FontHeight.Prop&quot;
+args10(1).Value = 100
+args10(2).Name = &quot;FontHeight.Diff&quot;
+args10(2).Value = 0
+
+dispatcher.executeDispatch(document, &quot;.uno:FontHeight&quot;, &quot;&quot;, 0, args10())
+
+rem ----------------------------------------------------------------------
+dim args11(1) as new com.sun.star.beans.PropertyValue
+args11(0).Name = &quot;Count&quot;
+args11(0).Value = 1
+args11(1).Name = &quot;Select&quot;
+args11(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoRight&quot;, &quot;&quot;, 0, args11())
+
+rem ----------------------------------------------------------------------
+dim args12(0) as new com.sun.star.beans.PropertyValue
+args12(0).Name = &quot;RightPara&quot;
+args12(0).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:RightPara&quot;, &quot;&quot;, 0, args12())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:SelectTable&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args13(1) as new com.sun.star.beans.PropertyValue
+args13(0).Name = &quot;LineSpacing.Mode&quot;
+args13(0).Value = 0
+args13(1).Name = &quot;LineSpacing.Height&quot;
+args13(1).Value = 100
+
+dispatcher.executeDispatch(document, &quot;.uno:LineSpacing&quot;, &quot;&quot;, 0, args13())
+
+
+rem ----------------------------------------------------------------------
+rem leaving the undo context
+    undo.leaveUndoContext()
+
+end sub
+
+
+sub lwt_td_Make_leave_connectors()
+
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_lwt_td_Make_leave_connectors)
+
+rem ----------------------------------------------------------------------
+dim args5(1) as new com.sun.star.beans.PropertyValue
+args5(0).Name = &quot;Symbols&quot;
+args5(0).Value = &quot;&quot;
+args5(1).Name = &quot;FontName&quot;
+args5(1).Value = &quot;STIX Two Math&quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertSymbol&quot;, &quot;&quot;, 0, args5())
+
+rem ----------------------------------------------------------------------
+dim args6(1) as new com.sun.star.beans.PropertyValue
+args6(0).Name = &quot;Count&quot;
+args6(0).Value = 1
+args6(1).Name = &quot;Select&quot;
+args6(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoRight&quot;, &quot;&quot;, 0, args6())
+
+rem ----------------------------------------------------------------------
+dim args7(1) as new com.sun.star.beans.PropertyValue
+args7(0).Name = &quot;Symbols&quot;
+args7(0).Value = &quot;&quot;
+args7(1).Name = &quot;FontName&quot;
+args7(1).Value = &quot;STIX Two Math&quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertSymbol&quot;, &quot;&quot;, 0, args7())
+
+rem ----------------------------------------------------------------------
+dim args8(1) as new com.sun.star.beans.PropertyValue
+args8(0).Name = &quot;Count&quot;
+args8(0).Value = 1
+args8(1).Name = &quot;Select&quot;
+args8(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoLeft&quot;, &quot;&quot;, 0, args8())
+
+rem ----------------------------------------------------------------------
+dim args9(1) as new com.sun.star.beans.PropertyValue
+args9(0).Name = &quot;Count&quot;
+args9(0).Value = 1
+args9(1).Name = &quot;Select&quot;
+args9(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoLeft&quot;, &quot;&quot;, 0, args9())
+
+rem ----------------------------------------------------------------------
+dim args10(2) as new com.sun.star.beans.PropertyValue
+args10(0).Name = &quot;FontHeight.Height&quot;
+args10(0).Value = 21
+args10(1).Name = &quot;FontHeight.Prop&quot;
+args10(1).Value = 100
+args10(2).Name = &quot;FontHeight.Diff&quot;
+args10(2).Value = 0
+
+dispatcher.executeDispatch(document, &quot;.uno:FontHeight&quot;, &quot;&quot;, 0, args10())
+
+rem ----------------------------------------------------------------------
+dim args11(1) as new com.sun.star.beans.PropertyValue
+args11(0).Name = &quot;Count&quot;
+args11(0).Value = 1
+args11(1).Name = &quot;Select&quot;
+args11(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoRight&quot;, &quot;&quot;, 0, args11())
+
+rem ----------------------------------------------------------------------
+dim args12(0) as new com.sun.star.beans.PropertyValue
+args12(0).Name = &quot;RightPara&quot;
+args12(0).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:RightPara&quot;, &quot;&quot;, 0, args12())
+
+rem ----------------------------------------------------------------------
+rem leaving the undo context
+    undo.leaveUndoContext()
+    
+end sub
+
+sub lwt_td_Make_label_box
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_lwt_td_Make_label_box)
+
+rem ----------------------------------------------------------------------
+dim args1(1) as new com.sun.star.beans.PropertyValue
+args1(0).Name = &quot;Count&quot;
+args1(0).Value = 1
+args1(1).Name = &quot;Select&quot;
+args1(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoRight&quot;, &quot;&quot;, 0, args1())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:MergeCells&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args3(0) as new com.sun.star.beans.PropertyValue
+args3(0).Name = &quot;CenterPara&quot;
+args3(0).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:CenterPara&quot;, &quot;&quot;, 0, args3())
+
+rem ----------------------------------------------------------------------
+rem leaving the undo context
+    undo.leaveUndoContext()
+
+end sub
+
+sub lwt_td_Enlarge_tree_zone_Right()
+rem ----------------------------------------------------------------------
+rem define variables
+dim document as object
+dim selection as object
+dim tree_zone as object
+dim totalCol as integer
+dim totalWidth as integer
+dim totalRow as integer
+
+rem ----------------------------------------------------------------------
+rem get access to the document
+document = ThisComponent
+selection = document.CurrentSelection
+tree_zone = getTextTableFromSelection(document, selection)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_lwt_td_Enlarge_tree_zone_Right)
+
+rem ----------------------------------------------------------------------
+rem setting the value of totalCol and totalRow
+totalCol = tree_zone.getColumns.getCount
+totalRow = tree_zone.getRows.getCount
+totalWidth = totalCol+1
+
+rem ----------------------------------------------------------------------
+rem inserting a column at the right edge of the tree_zone
+tree_zone.getColumns.insertByIndex(totalCol, 1)
+
+rem ----------------------------------------------------------------------
+rem inserting a column at the bottom edge of the tree_zone
+tree_zone.getRows.insertByIndex(totalRow, 1)
+
+rem ----------------------------------------------------------------------
+rem resetting the width of the tree_zone (for resetting col. widths)
+tree_zone.HoriOrient = 3
+tree_zone.Width = 720 * totalWidth
+
+rem ----------------------------------------------------------------------
+rem leaving the undo context
+    undo.leaveUndoContext()
+
+end sub
+
+sub lwt_td_Enlarge_tree_zone_Left()
+rem ----------------------------------------------------------------------
+rem define variables
+dim document as object
+dim selection as object
+dim tree_zone as object
+dim totalCol as integer
+dim totalRow as integer
+dim totalWidth as integer
+
+rem ----------------------------------------------------------------------
+rem get access to the document
+document = ThisComponent
+selection = document.CurrentSelection
+tree_zone = getTextTableFromSelection(document, selection)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_lwt_td_Enlarge_tree_zone_Left)
+
+rem ----------------------------------------------------------------------
+rem setting the value of totalCol and totalRow
+totalCol = tree_zone.getColumns.getCount
+totalRow = tree_zone.getRows.getCount
+totalWidth = totalCol+1
+
+rem ----------------------------------------------------------------------
+rem inserting a column at the left edge of the tree_zone
+tree_zone.getColumns.insertByIndex(0, 1)
+
+rem ----------------------------------------------------------------------
+rem inserting a column at the bottom edge of the tree_zone
+tree_zone.getRows.insertByIndex(totalRow, 1)
+
+rem ----------------------------------------------------------------------
+rem resetting the width of the tree_zone (for resetting col. widths)
+tree_zone.HoriOrient = 3
+tree_zone.Width = 720 * totalWidth
+
+rem ----------------------------------------------------------------------
+rem leaving the undo context
+    undo.leaveUndoContext()
+
+end sub
+
+sub lwt_td_Add_XBar_subTree()
+rem 
+&apos; version 	: 1.0
+&apos; date 		: 01-02-2024
+
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+call lwt_td_Enlarge_tree_zone_Right
+call lwt_td_Enlarge_tree_zone_Right
+call lwt_td_Make_leave_connectors
+
+rem ----------------------------------------------------------------------
+dim args1(1) as new com.sun.star.beans.PropertyValue
+args1(0).Name = &quot;Count&quot;
+args1(0).Value = 1
+args1(1).Name = &quot;Select&quot;
+args1(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoDown&quot;, &quot;&quot;, 0, args1())
+
+rem ----------------------------------------------------------------------
+dim args2(1) as new com.sun.star.beans.PropertyValue
+args2(0).Name = &quot;Count&quot;
+args2(0).Value = 1
+args2(1).Name = &quot;Select&quot;
+args2(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoRight&quot;, &quot;&quot;, 0, args2())
+
+call lwt_td_Make_leave_connectors
+
+end sub
+
+sub lwt_td_Make_roof()
+rem 
+&apos; version : 1.0
+&apos; date : 02-02-2024
+
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+rem ----------------------------------------------------------------------
+call lwt_td_Make_label_box
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:InsertPara&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args3(1) as new com.sun.star.beans.PropertyValue
+args3(0).Name = &quot;Count&quot;
+args3(0).Value = 1
+args3(1).Name = &quot;Select&quot;
+args3(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoUp&quot;, &quot;&quot;, 0, args3())
+
+rem ----------------------------------------------------------------------
+dim args4(1) as new com.sun.star.beans.PropertyValue
+args4(0).Name = &quot;Symbols&quot;
+args4(0).Value = &quot;△&quot;
+args4(1).Name = &quot;FontName&quot;
+args4(1).Value = &quot;STIX Two Math&quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertSymbol&quot;, &quot;&quot;, 0, args4())
+
+rem ----------------------------------------------------------------------
+dim args5(1) as new com.sun.star.beans.PropertyValue
+args5(0).Name = &quot;Count&quot;
+args5(0).Value = 1
+args5(1).Name = &quot;Select&quot;
+args5(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoDown&quot;, &quot;&quot;, 0, args5())
+
+rem ----------------------------------------------------------------------
+dim args6(0) as new com.sun.star.beans.PropertyValue
+args6(0).Name = &quot;Bold&quot;
+args6(0).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:Bold&quot;, &quot;&quot;, 0, args6())
+end sub
+
+</script:module>

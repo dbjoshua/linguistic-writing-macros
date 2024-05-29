@@ -1,0 +1,549 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="Ex_Formatting" script:language="StarBasic" script:moduleType="normal">REM  *****  BASIC  *****
+
+Function getTextTableFromSelection(pDoc As Object, Optional pSel As Object)
+Dim tT As Object
+getTextTableFromSelection = tT
+On Local Error Goto fail
+cCtrl = pDoc.CurrentController
+oldSel = pDoc.CurrentSelection
+If IsMissing(pSel) Then pSel = oldSel
+If pSel.supportsService(&quot;com.sun.star.text.TextTableCursor&quot;) Then
+  wasCur = True
+  splRgN = Split(pSel.RangeName, &quot;:&quot;)
+  wasSingle = (Ubound(splRgN)=0)
+  tlCellN = splRgN(0)
+  pSel.gotoCellByName(tlcellN, False)
+  cCtrl.select(pSel)
+  tRg = pDoc.CurrentSelection(0)
+Else
+  tRg = pSel(0)
+End If
+textTable = tRg.TextTable
+If NOT IsObject(textTable) Then textTable = tT
+getTextTableFromSelection = textTable
+fail:
+cCtrl.select(oldSel)
+If wasCur AND wasSingle Then
+  fr = cCtrl.Frame
+  dh = CreateUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+  dh.executeDispatch(fr, &quot;.uno:EntireCell&quot;, &quot;&quot;, 0, Array())
+End If
+End Function
+
+sub lwt_exf_Interlinearize()
+rem version 1.0
+rem date: 26 janv 2024
+
+rem ====== Place the cursor at the start of the morpheme line ============
+
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_lwt_exf_Interlinearize)
+
+rem ----------------------------------------------------------------------
+rem select morpheme line (1st line)
+dim args1(1) as new com.sun.star.beans.PropertyValue
+args1(0).Name = &quot;Count&quot;
+args1(0).Value = 1
+args1(1).Name = &quot;Select&quot;
+args1(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoDown&quot;, &quot;&quot;, 0, args1())
+
+rem ----------------------------------------------------------------------
+rem select glossline (2nd line)
+dim args2(1) as new com.sun.star.beans.PropertyValue
+args2(0).Name = &quot;Count&quot;
+args2(0).Value = 1
+args2(1).Name = &quot;Select&quot;
+args2(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoDown&quot;, &quot;&quot;, 0, args2())
+
+rem ----------------------------------------------------------------------
+rem adjust selection to the two previous lines
+dim args3(1) as new com.sun.star.beans.PropertyValue
+args3(0).Name = &quot;Count&quot;
+args3(0).Value = 1
+args3(1).Name = &quot;Select&quot;
+args3(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoLeft&quot;, &quot;&quot;, 0, args3())
+
+rem ----------------------------------------------------------------------
+rem Convert to table
+dim args5(4) as new com.sun.star.beans.PropertyValue
+args5(0).Name = &quot;Delimiter&quot;
+args5(0).Value = &quot; &quot;
+args5(1).Name = &quot;WithHeader&quot;
+args5(1).Value = false
+args5(2).Name = &quot;RepeatHeaderLines&quot;
+args5(2).Value = 0
+args5(3).Name = &quot;WithBorder&quot;
+args5(3).Value = false
+args5(4).Name = &quot;DontSplitTable&quot;
+args5(4).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:ConvertTextToTable&quot;, &quot;&quot;, 0, args5())
+
+rem ----------------------------------------------------------------------
+rem dispatcher.executeDispatch(document, &quot;.uno:ConvertTextToTable&quot;, &quot;&quot;, 0, Array())
+
+rem select the current table and adjust orientation to allow width adjustments
+doc = ThisComponent
+sel = doc.CurrentSelection
+current_table = getTextTableFromSelection(doc, sel)
+
+current_table.HoriOrient = 3
+
+rem ----------------------------------------------------------------------
+rem select the whole table
+dispatcher.executeDispatch(document, &quot;.uno:SelectTable&quot;, &quot;&quot;, 0, Array())
+
+rem -- Adjust padding ----------------------------------------------------
+rem 
+rem ----------------------------------------------------------------------
+dim args4(7) as new com.sun.star.beans.PropertyValue
+args4(0).Name = &quot;BorderOuter.LeftBorder&quot;
+args4(0).Value = Array(0,0,0,0,32767,0)
+args4(1).Name = &quot;BorderOuter.LeftDistance&quot;
+args4(1).Value = 101
+args4(2).Name = &quot;BorderOuter.RightBorder&quot;
+args4(2).Value = Array(0,0,0,0,32767,0)
+args4(3).Name = &quot;BorderOuter.RightDistance&quot;
+args4(3).Value = 101
+args4(4).Name = &quot;BorderOuter.TopBorder&quot;
+args4(4).Value = Array(0,0,0,0,32767,0)
+args4(5).Name = &quot;BorderOuter.TopDistance&quot;
+args4(5).Value = 101
+args4(6).Name = &quot;BorderOuter.BottomBorder&quot;
+args4(6).Value = Array(0,0,0,0,32767,0)
+args4(7).Name = &quot;BorderOuter.BottomDistance&quot;
+args4(7).Value = 101
+
+dispatcher.executeDispatch(document, &quot;.uno:BorderOuter&quot;, &quot;&quot;, 0, args4())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:BorderInner&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+rem auto-fit to content
+dispatcher.executeDispatch(document, &quot;.uno:SetMinimalColumnWidth&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+rem Indenting the cut lines
+doc_2 = ThisComponent
+sel_2 = doc.CurrentSelection
+gloss_lines = getTextTableFromSelection(doc_2, sel_2)
+
+gloss_lines.HoriOrient = 7 rem: to allow adjustment of the left margin
+gloss_lines.LeftMargin = 1470 rem: 100th of mm = 1.49 cm
+
+rem ----------------------------------------------------------------------
+rem leaving the undo context
+    undo.leaveUndoContext()
+
+end sub
+
+sub lwt_exf_Break_gloss_lines()
+rem version 1.0
+rem date: 26 janv 2024
+
+&apos; ========================================================================
+&apos;   Place the cursor at the start of the cell of the first line, 
+&apos;   where you want the 	glosslines to be break	
+&apos; ========================================================================
+
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_lwt_exf_Break_gloss_lines)
+
+rem ====== Get &quot;span&quot; from current cell ==================================
+
+rem ----- get active column index ----------------------------------------
+dim view as object
+dim cursor as object
+dim cur_cell as object
+dim cur_cell_name as string
+dim cur_col_ix as integer
+	
+view = thisComponent.CurrentController
+cursor = view.getViewCursor()
+cur_cell = cursor.Cell
+cur_cell_name = cur_cell.CellName
+cur_col_name = Left(cur_cell_name, 1)
+
+&apos; MsgBox cur_col_name
+
+select case cur_col_name
+	case &quot;A&quot;
+		cur_col_ix = 1
+	case &quot;B&quot;
+		cur_col_ix = 2
+	case &quot;C&quot;
+		cur_col_ix = 3
+	case &quot;D&quot;
+		cur_col_ix = 4
+	case &quot;E&quot;
+		cur_col_ix = 5
+	case &quot;F&quot;
+		cur_col_ix = 6
+	case &quot;G&quot;
+		cur_col_ix = 7
+	case &quot;H&quot;
+		cur_col_ix = 8
+	case &quot;I&quot;
+		cur_col_ix = 9
+	case &quot;J&quot;
+		cur_col_ix = 10
+	case &quot;K&quot;
+		cur_col_ix = 11
+	case &quot;L&quot;
+		cur_col_ix = 12
+	case &quot;M&quot;
+		cur_col_ix = 13
+	case &quot;N&quot;
+		cur_col_ix = 14
+	case &quot;O&quot;
+		cur_col_ix = 15
+	case &quot;P&quot;
+		cur_col_ix = 16
+	case &quot;Q&quot;
+		cur_col_ix = 17
+	case &quot;R&quot;
+		cur_col_ix = 18
+	case &quot;S&quot;
+		cur_col_ix = 19
+	case &quot;T&quot;
+		cur_col_ix = 20
+	case &quot;U&quot;
+		cur_col_ix = 21
+	case &quot;V&quot;
+		cur_col_ix = 22
+	case &quot;W&quot;
+		cur_col_ix = 23
+	case &quot;X&quot;
+		cur_col_ix = 24
+	case &quot;Y&quot;
+		cur_col_ix = 25
+	case &quot;Z&quot;
+		cur_col_ix = 26
+end select	
+
+&apos;MsgBox cur_col_ix
+
+rem --- get the active table: glosslines ---------------------------------
+doc = ThisComponent
+sel = doc.CurrentSelection
+gloss_lines = getTextTableFromSelection(doc, sel)
+
+gloss_lines_span = gloss_lines.getColumns.getCount
+gloss_lines_cols = gloss_lines.getColumns
+
+rem --- get &quot;span&quot; value -------------------------------------------------
+dim sel_span as integer
+
+sel_span = gloss_lines_span - cur_col_ix
+
+&apos;MsgBox sel_span
+
+
+rem === Select the part of the glosslines to be cut ======================
+
+rem ----------------------------------------------------------------------
+dim args1(1) as new com.sun.star.beans.PropertyValue
+args1(0).Name = &quot;Count&quot;
+args1(0).Value = 1
+args1(1).Name = &quot;Select&quot;
+args1(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoDown&quot;, &quot;&quot;, 0, args1())
+
+rem ----------------------------------------------------------------------
+dim args2(1) as new com.sun.star.beans.PropertyValue
+args2(0).Name = &quot;Count&quot;
+args2(0).Value = sel_span
+args2(1).Name = &quot;Select&quot;
+args2(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoRight&quot;, &quot;&quot;, 0, args2())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:Copy&quot;, &quot;&quot;, 0, Array())
+
+rem --- Remove columns ---------------------------------------------------
+
+rem ----------------------------------------------------------------------
+dim args3(1) as new com.sun.star.beans.PropertyValue
+args3(0).Name = &quot;Count&quot;
+args3(0).Value = sel_span
+args3(1).Name = &quot;Select&quot;
+args3(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoLeft&quot;, &quot;&quot;, 0, args3())
+
+rem ----------------------------------------------------------------------
+dim args4(1) as new com.sun.star.beans.PropertyValue
+args4(0).Name = &quot;Count&quot;
+args4(0).Value = 1
+args4(1).Name = &quot;Select&quot;
+args4(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoUp&quot;, &quot;&quot;, 0, args4())
+
+rem ----------------------------------------------------------------------
+dim args7(1) as new com.sun.star.beans.PropertyValue
+args7(0).Name = &quot;Count&quot;
+args7(0).Value = 1
+args7(1).Name = &quot;Select&quot;
+args7(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoDown&quot;, &quot;&quot;, 0, args7())
+
+rem ----------------------------------------------------------------------
+dim args6(1) as new com.sun.star.beans.PropertyValue
+args6(0).Name = &quot;Count&quot;
+args6(0).Value = sel_span
+args6(1).Name = &quot;Select&quot;
+args6(1).Value = true
+
+dispatcher.executeDispatch(document, &quot;.uno:GoRight&quot;, &quot;&quot;, 0, args6())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:DeleteColumns&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+rem get and select current table
+doc_2 = ThisComponent
+sel_2 = doc.CurrentSelection
+gloss_lines_2 = getTextTableFromSelection(doc_2, sel_2)
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:SelectTable&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:SetMinimalColumnWidth&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args8(1) as new com.sun.star.beans.PropertyValue
+args8(0).Name = &quot;Count&quot;
+args8(0).Value = 1
+args8(1).Name = &quot;Select&quot;
+args8(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoDown&quot;, &quot;&quot;, 0, args8())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:InsertPara&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:Paste&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args9(1) as new com.sun.star.beans.PropertyValue
+args9(0).Name = &quot;Count&quot;
+args9(0).Value = 1
+args9(1).Name = &quot;Select&quot;
+args9(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoUp&quot;, &quot;&quot;, 0, args9())
+
+rem ----------------------------------------------------------------------
+rem get and select current table
+doc_3 = ThisComponent
+sel_3 = doc.CurrentSelection
+cut_lines = getTextTableFromSelection(doc_3, sel_3)
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:SelectTable&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:SetMinimalColumnWidth&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+rem Indenting the cut lines
+cut_lines.HoriOrient = 7 rem: to allow adjustment of the left margin
+cut_lines.LeftMargin = 1470 rem: 100th of mm = 1.49 cm
+
+rem ----------------------------------------------------------------------
+rem leaving the undo context
+    undo.leaveUndoContext()
+
+rem ----------------------------------------------------------------------
+rem TODO for version 1.1
+rem Create a Dialog window to ask for indentation of the cut lines
+&apos; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+&apos; ~ The text in the window: &quot;Do you want to indent the cut lines?&quot;
+&apos; ~ Two boutons: yes, no
+&apos; ~ If yes is pressed then DO_INDENT 
+&apos; ~ else do nothing end if
+&apos; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+end sub
+
+sub lwt_exf_Number_lex
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_Number_Lex)
+
+rem ----------------------------------------------------------------------
+dim args1(0) as new com.sun.star.beans.PropertyValue
+args1(0).Name = &quot;Text&quot;
+args1(0).Value = &quot;(&quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertText&quot;, &quot;&quot;, 0, args1())
+
+rem ----------------------------------------------------------------------
+dim args2(5) as new com.sun.star.beans.PropertyValue
+args2(0).Name = &quot;Type&quot;
+args2(0).Value = 23
+args2(1).Name = &quot;SubType&quot;
+args2(1).Value = 127
+args2(2).Name = &quot;Name&quot;
+args2(2).Value = &quot;genitem&quot;
+args2(3).Name = &quot;Content&quot;
+args2(3).Value = &quot;&quot;
+args2(4).Name = &quot;Format&quot;
+args2(4).Value = 4
+args2(5).Name = &quot;Separator&quot;
+args2(5).Value = &quot; &quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertField&quot;, &quot;&quot;, 0, args2())
+
+rem ----------------------------------------------------------------------
+dim args3(0) as new com.sun.star.beans.PropertyValue
+args3(0).Name = &quot;Text&quot;
+args3(0).Value = &quot;)&quot;+CHR$(9)
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertText&quot;, &quot;&quot;, 0, args3())
+
+rem ----------------------------------------------------------------------
+rem leaving the undo context
+    undo.leaveUndoContext()
+
+end sub
+
+sub lwt_exf_Number_glex
+rem version 1.0
+rem date: 26 janv 2024
+
+rem ====== Place the cursor at the start of the morpheme line ============
+
+rem ----------------------------------------------------------------------
+rem define variables
+dim document   as object
+dim dispatcher as object
+rem ----------------------------------------------------------------------
+rem get access to the document
+document   = ThisComponent.CurrentController.Frame
+dispatcher = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+
+rem ----------------------------------------------------------------------
+rem creating the corresponding undo context
+	undo = ThisComponent.getUndoManager()
+	undo.enterUndoContext(undo_lwt_exf_Number_glex)
+
+rem ----------------------------------------------------------------------
+dispatcher.executeDispatch(document, &quot;.uno:InsertColumnsBefore&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+dim args2(1) as new com.sun.star.beans.PropertyValue
+args2(0).Name = &quot;Count&quot;
+args2(0).Value = 1
+args2(1).Name = &quot;Select&quot;
+args2(1).Value = false
+
+dispatcher.executeDispatch(document, &quot;.uno:GoLeft&quot;, &quot;&quot;, 0, args2())
+
+rem ----------------------------------------------------------------------
+dim args3(0) as new com.sun.star.beans.PropertyValue
+args3(0).Name = &quot;Text&quot;
+args3(0).Value = &quot;(&quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertText&quot;, &quot;&quot;, 0, args3())
+
+rem ----------------------------------------------------------------------
+dim args4(5) as new com.sun.star.beans.PropertyValue
+args4(0).Name = &quot;Type&quot;
+args4(0).Value = 23
+args4(1).Name = &quot;SubType&quot;
+args4(1).Value = 127
+args4(2).Name = &quot;Name&quot;
+args4(2).Value = &quot;genitem&quot;
+args4(3).Name = &quot;Content&quot;
+args4(3).Value = &quot;&quot;
+args4(4).Name = &quot;Format&quot;
+args4(4).Value = 4
+args4(5).Name = &quot;Separator&quot;
+args4(5).Value = &quot; &quot;
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertField&quot;, &quot;&quot;, 0, args4())
+
+rem ----------------------------------------------------------------------
+dim args5(0) as new com.sun.star.beans.PropertyValue
+args5(0).Name = &quot;Text&quot;
+args5(0).Value = &quot;)&quot;+CHR$(9)
+
+dispatcher.executeDispatch(document, &quot;.uno:InsertText&quot;, &quot;&quot;, 0, args5())
+
+rem select the current table and adjust orientation to allow width adjustments
+doc = ThisComponent
+sel = doc.CurrentSelection
+current_table = getTextTableFromSelection(doc, sel)
+
+current_table.HoriOrient = 3
+
+rem ----------------------------------------------------------------------
+rem select the whole table
+dispatcher.executeDispatch(document, &quot;.uno:SelectTable&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+rem auto-fit to content
+dispatcher.executeDispatch(document, &quot;.uno:SetMinimalColumnWidth&quot;, &quot;&quot;, 0, Array())
+
+rem ----------------------------------------------------------------------
+rem Indenting the cut lines
+doc_2 = ThisComponent
+sel_2 = doc.CurrentSelection
+gloss_lines = getTextTableFromSelection(doc_2, sel_2)
+
+gloss_lines.HoriOrient = 7 rem: to allow adjustment of the left margin
+gloss_lines.LeftMargin = 0 rem: 100th of mm = 1.49 cm
+
+rem ----------------------------------------------------------------------
+rem Fermeture du contexte d&apos;annulation : &quot;undo_Number_Glex&quot;
+    undo.leaveUndoContext()
+
+end sub
+</script:module>
